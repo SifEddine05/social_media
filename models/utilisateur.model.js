@@ -69,9 +69,9 @@ async function signInUser(req, res) {
       const message = result.outBinds.result;
   
       // Checking if sign-in was successful
-      if (message === 'Sign-in successful.') {
+      if (message != -1 && message != -2) {
         // Generating JWT token
-        const token = jwt.sign({ username }, 'blancos_zo3ama', { expiresIn: '1h' });
+        const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '1h' });
   
         // Sending the token as response
         res.status(200).json({ token });
@@ -88,9 +88,52 @@ async function signInUser(req, res) {
     }
   }
 
-
+  // Function to update username
+async function updateUsername(req, res) {
+    const { oldUsername, newUsername } = req.body;
+    const token = req.headers.authorization;
   
+    try {
+      // Verify the token
+      const decoded = jwt.verify(token, 'blancos_zo3ama');
+  
+      // Establishing connection to the Oracle database
+      const connection = await connect();
+  
+      // Creating a statement for calling the stored procedure
+      await connection.execute(
+        `BEGIN
+           UpdateUsername(:p_old_username, :p_new_username);
+         END;`,
+        {
+          p_old_username: oldUsername,
+          p_new_username: newUsername
+        }
+      );
+  
+      // Commit the transaction
+      await connection.commit();
+  
+      // Sending success message as response
+      res.status(200).json({ message: 'Username updated successfully.' });
+  
+      // Releasing the connection
+      await connection.close();
+    } catch (error) {
+      console.error('Error occurred:', error);
+      if (error instanceof jwt.JsonWebTokenError) {
+        // If token verification fails
+        res.status(401).json({ message: 'Invalid token.' });
+      } else {
+        // If other errors occur
+        res.status(500).json({ message: 'An error occurred during username update.' });
+      }
+    }
+  }
+
+
+
 
 
   module.exports = {get_users,
-    signUpUser, signInUser};
+    signUpUser, signInUser, updateUsername};
