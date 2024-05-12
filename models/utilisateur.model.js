@@ -193,7 +193,45 @@ async function signInUser(req, res) {
   }
 
 
+  async function updateBio(req, res) {
+    const { username, newBio } = req.body;
   
+    try {
+
+      // Establishing connection to the Oracle database
+      const connection = await connect();
+  
+      result = await connection.execute(
+        `BEGIN
+            UpdateBio(:p_username, :p_new_bio, :p_error_message);
+         END;`,
+        {
+          p_username: username,
+          p_new_bio: newBio,
+          p_error_message: { type: oracledb.STRING, dir: oracledb.BIND_OUT }
+        }
+      );
+  
+      // Check for custom error message returned by the procedure
+      const errorMessage = result.outBinds.p_error_message;
+      if (errorMessage) {
+          res.status(400).json({ message: errorMessage });
+      } else {
+          res.status(200).json({ message: 'bio updated successfully.' });
+      }
+  
+    } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'An unexpected error occurred.' });
+      }
+  }
+
+
+
+
+
+
+
 
   module.exports = {get_users,
-    signUpUser, signInUser, updateUsername, updateEmail, updatePassword};
+    signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateBio};
