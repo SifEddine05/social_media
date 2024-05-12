@@ -23,14 +23,9 @@ const get_saved_posts = async(req,res,next)=>{
             start_row: start_row,
             end_row: end_row
         };
-    
-        
         const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
         res.status(200).json(result)
-    }
-    
-
-    
+    }  
 }
 
 module.exports = {
