@@ -1,4 +1,5 @@
 const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
+const oracledb = require('oracledb');
 
 
 const getSavedPosts =
@@ -10,27 +11,144 @@ const getSavedPosts =
 WHERE row_num BETWEEN :start_row AND :end_row`;
 
 const get_saved_posts = async(req,res,next)=>{
+    try{
 
-    const id = req.user.message
+        const id = req.user.message
 
-    const user_id = id
-    const start_row = req.query.start_row;
-    const end_row = req.query.end_row ; 
-    if(!start_row || !end_row )
-    {
-        res.status(400).json({"error" : "You must intoduce a start_row and end_row "})
+        const user_id = id
+        const start_row = req.query.start_row;
+        const end_row = req.query.end_row ; 
+        if(!start_row || !end_row )
+        {
+            res.status(400).json({"error" : "You must intoduce a start_row and end_row "})
+        }
+        else {
+            const bindParams = {
+                user_id: user_id, 
+                start_row: start_row,
+                end_row: end_row
+            };
+            const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
+            res.status(200).json(result)
+        } 
     }
-    else {
-        const bindParams = {
-            user_id: user_id, 
-            start_row: start_row,
-            end_row: end_row
-        };
-        const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
-        res.status(200).json(result)
-    }  
+    catch(error){
+        res.status(400).json({ error:  error.message  });
+    } 
 }
 
+
+
+
+const addPostQuery = `
+BEGIN
+    add_post(:user_id, :content, :image);
+END;
+`
+
+const add_post = async(req,res,next)=>{
+    try{
+        const id = req.user.message
+
+        const user_id = id
+        const { content } = req.body;
+        
+        if(!content )
+        {
+            res.status(400).json({"error" : "You must intoduce content  "})
+        }
+        else {
+            const bindParams = {
+                user_id: user_id, 
+                content:content,
+                image: "sss.com"
+            };
+            const result = await executeQueryWithbindParams(addPostQuery,bindParams);
+            res.status(200).json("the post is added successfully")
+        }  
+    }
+    catch(error){
+        res.status(400).json({ error:  error.message  });
+    }
+}
+
+
+
+
+
+const updatePostQuery = `
+BEGIN
+    modify_post(:user_id, :post_id, :content, NULL);
+END;
+`
+const update_post = async(req,res,next) =>{
+    try{
+        const id = req.user.message
+
+        const user_id = id
+        const { post_id,content } = req.body;
+        
+        if(!content || !post_id)
+        {
+            res.status(400).json({"error" : "You must intoduce content  and post_id"})
+        }
+        else {
+            const bindParams = {
+                user_id: user_id, 
+                post_id:post_id,
+                content : content
+            };
+            // await executeQuery(addPostQuery)
+            const result = await executeQueryWithbindParams(updatePostQuery,bindParams);
+            res.status(200).json("the post is updated successfully")
+        }  
+    }
+    catch(error){
+        res.status(400).json({ error:  error.message  });
+    }
+}
+
+
+
+const getRecentPostsQuery = `
+BEGIN
+    :cursor := get_recent_posts_func(:p_user_id, :p_page_number);
+END;
+`;
+
+const executeGetRecentPostsFunc = async (req, res) => {
+    try {
+        const v_user_id = req.user.message; 
+        const { page } = req.query;
+        if(!page){
+            res.status(400).json({"error":"the number of page is required "})
+        }
+        const v_page_number = page;
+        const connection = await connect()
+
+        const query = `BEGIN :v_cursor := get_recent_posts_func(:v_user_id, :v_page_number); END;`;
+
+        const bindVars = {
+            v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+            v_user_id: v_user_id,
+            v_page_number: v_page_number
+        };
+
+        const result = await connection.execute(query, bindVars);
+        const cursor = result.outBinds.v_cursor;
+        const rows = await cursor.getRows()
+        
+        await cursor.close();
+
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ "error": error.message });
+    }
+};
+
 module.exports = {
-    get_saved_posts
+    get_saved_posts,
+    add_post,
+    update_post,
+    executeGetRecentPostsFunc
 }
