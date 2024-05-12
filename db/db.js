@@ -222,7 +222,6 @@ async function executeQuery(sqlQuery) {
 module.exports = {
   connect,
   executeQuery,
-  convertToJSON,
   executeQueryWithbindParams,
   followUserInDB,
   unFollowUserInDB,
