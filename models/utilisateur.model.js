@@ -207,5 +207,5 @@ async function updateUsername(req, res) {
 
 
 
-  module.exports = {get_users,, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
+  module.exports = {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
     signUpUser, signInUser, updateUsername};
