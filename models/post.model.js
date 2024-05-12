@@ -10,7 +10,10 @@ const getSavedPosts =
 WHERE row_num BETWEEN :start_row AND :end_row`;
 
 const get_saved_posts = async(req,res,next)=>{
-    const user_id = 1
+
+    const id = req.user.message
+
+    const user_id = id
     const start_row = req.query.start_row;
     const end_row = req.query.end_row ; 
     if(!start_row || !end_row )
