@@ -146,9 +146,58 @@ const executeGetRecentPostsFunc = async (req, res) => {
     }
 };
 
+
+
+
+const getPostCommentsWithRepliesQuery = `
+BEGIN
+    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number);
+END;
+    
+`;
+
+const getpostcomments = async (req, res) => {
+    try {
+        // Extract the post_id and page_number from the request query
+        const { post_id, page_number } = req.query;
+        const connection = await connect();
+
+        if (!post_id || !page_number) {
+            res.status(400).json({ "error": "post_id and page_number are required " });
+            return;
+        }
+
+        // Bind parameters
+        const bindParams = {
+            cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+            p_post_id: post_id,
+            p_page_number: page_number
+        };
+
+        // Execute the PL/SQL function
+        const result = await connection.execute(getPostCommentsWithRepliesQuery, bindParams);
+        // Fetch the result cursor
+        const cursor = result.outBinds.cursor;
+
+        // Process the cursor
+        const comments = await cursor.getRows()
+
+        // Close the cursor
+        await cursor.close();
+        
+        // Send the result to the client
+        res.json(JSON.parse(comments));
+    } catch (error) {
+        console.error('Error executing get_comments_with_replies_func:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
 module.exports = {
     get_saved_posts,
     add_post,
     update_post,
-    executeGetRecentPostsFunc
+    executeGetRecentPostsFunc,
+    getpostcomments
 }

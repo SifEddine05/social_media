@@ -2,7 +2,7 @@ const { getConnection, connect, executeQuery, convertToJSON, executeQueryWithbin
 const oracledb = require('oracledb');
 const jwt = require('jsonwebtoken'); 
 
-const sqlQuery = `SELECT * FROM follows`;
+const sqlQuery = `SELECT * FROM posts`;
 const get_users = async(req,res,next)=>{
     const result = await executeQuery(sqlQuery);
     console.log("result",result);
