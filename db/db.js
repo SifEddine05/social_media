@@ -26,6 +26,7 @@ async function executeQuery(sqlQuery) {
         throw new Error('Connection not established. Call connect() first.');
       }
       const result = await connection.execute(sqlQuery);
+      await connection.close()
       return result.rows;
     } catch (err) {
       console.error('Error executing query:', err);
@@ -33,23 +34,7 @@ async function executeQuery(sqlQuery) {
     }
   }
 
-  function convertToJSON(result) {
-    if (!result.metaData) {
-      throw new Error('Metadata not available in query result.');
-    }
-  
-    const jsonResult = result.rows.map(row => {
-      const jsonRow = {};
-      result.metaData.forEach((meta, index) => {
-        jsonRow[meta.name] = row[index];
-      });
-      return jsonRow;
-    });
-    return jsonResult;
-  }
-
 module.exports = {
   connect,
   executeQuery,
-  convertToJSON
 };
