@@ -18,7 +18,19 @@ async function connect() {
     throw err;
   }
 }
-
+async function executeQueryWithBinds(sqlQuery, bindParams = []) {
+    try {
+        const connection = await connect()
+      if (!connection) {
+        throw new Error('Connection not established. Call connect() first.');
+      }
+      const result = await connection.execute(sqlQuery, bindParams, );
+      return result.rows;
+    } catch (err) {
+      console.error('Error executing query:', err);
+      throw err;
+    }
+  }
 async function executeQuery(sqlQuery) {
     try {
         const connection = await connect()
@@ -33,23 +45,29 @@ async function executeQuery(sqlQuery) {
     }
   }
 
-  function convertToJSON(result) {
-    if (!result.metaData) {
-      throw new Error('Metadata not available in query result.');
-    }
+  async function executeQueryWithbindParams(sqlQuery, bindParams = {}) {
+    try {
+        const connection = await connect()
+        console.log(bindParams);
+      if (!connection) {
+        throw new Error('Connection not established. Call connect() first.');
+      }
   
-    const jsonResult = result.rows.map(row => {
-      const jsonRow = {};
-      result.metaData.forEach((meta, index) => {
-        jsonRow[meta.name] = row[index];
-      });
-      return jsonRow;
-    });
-    return jsonResult;
+      const options = {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+        autoCommit: true // You can adjust this option based on your requirements
+      };
+  
+      const result = await connection.execute(sqlQuery, bindParams, options);
+      return result.rows;
+    } catch (err) {
+      console.error('Error executing query:', err);
+      throw err;
+    }
   }
-
+ 
 module.exports = {
   connect,
   executeQuery,
-  convertToJSON
+  executeQueryWithbindParams
 };
