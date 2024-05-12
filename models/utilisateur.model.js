@@ -75,8 +75,7 @@ const unfollowUser = async (req, res, next) => {
 
 
 const getUserFollowers = async (req, res, next) => {
-    const userId = req.params.userId;
-    console.log(req.user);
+    const userId = req.user.message;
 
     try {
         const connection = await connect();
@@ -106,7 +105,7 @@ const getUserFollowers = async (req, res, next) => {
 
 
 const getUserFollowings = async (req, res, next) => {
-    const userId = req.params.userId;
+    const userId = req.user.message;
 
     try {
         const connection = await connect();

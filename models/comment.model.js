@@ -2,7 +2,8 @@ const { executeQueryWithbindParams } = require('../db/db');
 
 
 const likeComment = async (req, res, next) => {
-    const { userId, commentId } = req.body; 
+    const { commentId } = req.body; 
+    const userId = req.user.message;
     try {
         await executeQueryWithbindParams(
             `BEGIN
@@ -21,7 +22,8 @@ const likeComment = async (req, res, next) => {
 };
 
 const dislikeComment = async (req, res, next) => {
-    const { userId, commentId } = req.body; 
+    const { commentId } = req.body; 
+    const userId = req.user.message;
     try {
         await executeQueryWithbindParams(
             `BEGIN
