@@ -4,6 +4,7 @@ const app = express();
 const cors = require("cors");
 const { connect } = require('./db/db'); 
 const utilisateurRouter = require("./routes/utilisateur.route");
+const postRouter = require("./routes/post.route");
 
 
 
@@ -24,6 +25,7 @@ app.use(async (err, req, res, next) => {
   
  
   app.use("/", utilisateurRouter);
+  app.use("/",postRouter)
 
 
   connect()
