@@ -15,6 +15,7 @@ utilisateurRouter.route('/signin').post(signInUser)
 utilisateurRouter.route('/update_username').post(updateUsername)
 utilisateurRouter.route('/update_email').post(updateEmail)
 utilisateurRouter.route('/update_password').post(updatePassword)
-utilisateurRouter.route('/update_bio').post(updateBio)
+utilisateurRouter.route('/update_profile').post(updateProfile)
+
 
 module.exports = utilisateurRouter ;
