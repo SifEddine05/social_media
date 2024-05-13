@@ -1,8 +1,7 @@
 
-const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
 const oracledb = require('oracledb');
 const jwt = require('jsonwebtoken'); 
-const {  connect, executeQuery, executeQueryWithbindParams } = require('../db/db');
+const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
 
 const getPostsByUserId = async (req, res) => {
    
@@ -44,25 +43,6 @@ const getPostsByUserId = async (req, res) => {
 };
 
 
-const deletePostById=async (req,res)=>{
-    const id = req.user.message
-    const user_id = id
-    const deletePostQuery=`BEGIN
-    delete_post(:user_id,:post_id);
-END;`;
-try {
-    const connection = await connect();
-    const { post_id } = req.params; 
-    const binds = [post_id];
-    const result = await connection.execute(deletePostQuery, binds);
-    console.log("post is deleted");
-    console.log(result);
-    res.json({ message: 'Post deleted successfully' });
-   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-}
-}
 
 const getSavedPosts =
 `SELECT * FROM (
@@ -253,22 +233,6 @@ const getpostcomments = async (req, res) => {
 
 
 
-const getPostsByUserId = async (req, res) => {
-    const getMyPostsQuery = `SELECT * FROM posts WHERE user_id = :user_id`;
-
-    try {
-        const connection = await connect();
-        const { user_id } = req.params; 
-        const binds = [user_id];
-        const result = await connection.execute(getMyPostsQuery, binds);
-        console.log(result);
-        res.json(result.rows); 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
 
 
 
@@ -453,6 +417,36 @@ const UnlikePost=async (req,res)=>{
     }
 }
 
+
+
+
+
+const UnsavePost=async (req,res)=>{
+    const UnsavePostQuery=
+    `BEGIN
+    SP_UnsavePost(:user_id, :post_id);
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id } = req.body; 
+
+         if (!post_id ) {
+            res.status(400).json({ "error": "post_id is required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id
+        };
+        const result = await executeQueryWithbindParams(UnsavePostQuery,binds)
+        res.json({ message: 'Post Unsaved successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error":error.message });
+    }
+}
+
+
 module.exports = {
     get_saved_posts,
     add_post,
@@ -466,5 +460,6 @@ module.exports = {
     savePost,
     commentPost,
     searchAccount,
-    UnlikePost
+    UnlikePost,
+    UnsavePost
 }

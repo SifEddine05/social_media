@@ -1,7 +1,7 @@
 const express = require("express");
+const postRouter = express.Router();
 
-const get_users = require("../models/utilisateur.model");
-const { getPostsByUserId,deletePostById, get_saved_posts, add_post, update_post, executeGetRecentPostsFunc, getpostcomments, getPostsByUserId, deletePostById, getmyposts, likePost, savePost, commentPost, searchAccount, UnlikePost } = require("../models/post.model");
+const { deletePostById, get_saved_posts, add_post, update_post, executeGetRecentPostsFunc, getpostcomments, getPostsByUserId, getmyposts, likePost, savePost, commentPost, searchAccount, UnlikePost, UnsavePost } = require("../models/post.model");
 const authenticateToken = require("../middleware/token.middleware");
 
 
@@ -19,6 +19,8 @@ postRouter.route('/likepost').post(authenticateToken, likePost);
 postRouter.route('/unlikepost').post(authenticateToken, UnlikePost);
 
 postRouter.route('/savepost').post(authenticateToken, savePost);
+postRouter.route('/unsavepost').post(authenticateToken, UnsavePost);
+
 postRouter.route('/commentpost').post(authenticateToken, commentPost);
 postRouter.route('/searchaccount').get(authenticateToken, searchAccount);
 
