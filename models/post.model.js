@@ -1,5 +1,69 @@
-const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
+
 const oracledb = require('oracledb');
+const jwt = require('jsonwebtoken'); 
+const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
+
+const getPostsByUserId = async (req, res) => {
+   
+    const getMyPostsQuery = `SELECT 
+    p.*, 
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'like'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_liked,
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'save'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_saved
+FROM posts p
+WHERE p.user_id = :user_id`;
+    
+    const {user_id} = req.params
+
+    try {
+        if(!user_id)
+        {
+            res.status(400).json({"error":"user_id is required"})
+        }
+        const binds = {user_id : user_id};
+        const result = await executeQueryWithbindParams(getMyPostsQuery, binds);
+        console.log(result);
+        const jsonResult = result.map(row => {
+            return {
+                post_id: row[0],
+                user_id: row[1],
+                content: row[2],
+                photo: row[3],
+                nb_likes: row[4],
+                nb_comments: row[5],
+                created_at: row[6],
+                is_liked: row[7],
+                is_saved: row[8]
+            };
+        });
+        res.json(jsonResult); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 
 
 const getSavedPosts =
@@ -29,7 +93,20 @@ const get_saved_posts = async(req,res,next)=>{
                 end_row: end_row
             };
             const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
-            res.status(200).json(result)
+            const jsonResult = result.map(row => {
+                return {
+                    post_id: row[0],
+                    user_id: row[1],
+                    content: row[2],
+                    photo: row[3],
+                    nb_likes: row[4],
+                    nb_comments: row[5],
+                    created_at: row[6],
+                    interact_source: row[7],
+                    liked_by_user: row[8]
+                };
+            });
+            res.status(200).json(jsonResult)
         } 
     }
     catch(error){
@@ -126,7 +203,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
         const bindVars = {
             v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
-            v_user_id: v_user_id,
+            v_user_id: 1,
             v_page_number: v_page_number
         };
 
@@ -135,8 +212,8 @@ const executeGetRecentPostsFunc = async (req, res) => {
         const rows = await cursor.getRows()
         
         await cursor.close();
-
-        res.json(rows);
+        const jsonResult = rows.map(element => JSON.parse(element[0]));
+        res.json(jsonResult);
     } catch (error) {
         res.status(500).json({ "error": error.message });
     }
@@ -147,7 +224,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
 const getPostCommentsWithRepliesQuery = `
 BEGIN
-    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number);
+    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number, :p_user_id);
 END;
     
 `;
@@ -156,6 +233,7 @@ const getpostcomments = async (req, res) => {
     try {
         // Extract the post_id and page_number from the request query
         const { post_id, page_number } = req.query;
+        const id = req.user.message
         const connection = await connect();
 
         if (!post_id || !page_number) {
@@ -167,7 +245,8 @@ const getpostcomments = async (req, res) => {
         const bindParams = {
             cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
             p_post_id: post_id,
-            p_page_number: page_number
+            p_page_number: page_number,
+            p_user_id : id
         };
 
         // Execute the PL/SQL function
@@ -190,22 +269,6 @@ const getpostcomments = async (req, res) => {
 };
 
 
-
-const getPostsByUserId = async (req, res) => {
-    const getMyPostsQuery = `SELECT * FROM posts WHERE user_id = :user_id`;
-
-    try {
-        const connection = await connect();
-        const { user_id } = req.params; 
-        const binds = [user_id];
-        const result = await connection.execute(getMyPostsQuery, binds);
-        console.log(result);
-        res.json(result.rows); 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
 
 
 
@@ -233,13 +296,53 @@ try {
 
 const getmyposts = async (req,res,next)=>
 {
-    const query = `SELECT * FROM posts WHERE user_id = :user_id`;
+    const query = `SELECT 
+    p.*, 
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'like'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_liked,
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'save'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_saved
+FROM posts p
+WHERE p.user_id = :user_id`;
+
     const user_id = req.user.message
     try {
-        const binds = {user_id : 4};
+        const binds = {user_id : user_id};
         const result = await executeQueryWithbindParams(query, binds);
-        console.log(result);
-        res.json(result); 
+        const jsonResult = result.map(row => {
+            return {
+                post_id: row[0],
+                user_id: row[1],
+                content: row[2],
+                photo: row[3],
+                nb_likes: row[4],
+                nb_comments: row[5],
+                created_at: row[6],
+                is_liked: row[7],
+                is_saved: row[8]
+            };
+        });
+        res.json(jsonResult); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -391,6 +494,36 @@ const UnlikePost=async (req,res)=>{
     }
 }
 
+
+
+
+
+const UnsavePost=async (req,res)=>{
+    const UnsavePostQuery=
+    `BEGIN
+    SP_UnsavePost(:user_id, :post_id);
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id } = req.body; 
+
+         if (!post_id ) {
+            res.status(400).json({ "error": "post_id is required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id
+        };
+        const result = await executeQueryWithbindParams(UnsavePostQuery,binds)
+        res.json({ message: 'Post Unsaved successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error":error.message });
+    }
+}
+
+
 module.exports = {
     get_saved_posts,
     add_post,
@@ -404,5 +537,6 @@ module.exports = {
     savePost,
     commentPost,
     searchAccount,
-    UnlikePost
+    UnlikePost,
+    UnsavePost
 }

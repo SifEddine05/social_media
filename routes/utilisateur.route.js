@@ -1,6 +1,6 @@
 const express = require("express");
 
-const {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, signUpUser, signInUser, updateUsername, updateProfile, updateEmail, updatePassword} = require("../models/utilisateur.model");
+const {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateBio} = require("../models/utilisateur.model");
 const authenticateToken = require("../middleware/token.middleware");
 const utilisateurRouter = express.Router();
 

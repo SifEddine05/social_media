@@ -164,7 +164,8 @@ async function signUpUser(req, res) {
       // Releasing the connection
       await connection.close();
     } catch (error) {
-      console.error('Error occurred:', error);
+      console.log(error);
+      console.log('Error occurred:', error);
       res.status(500).json({ message: 'An error occurred during signup.' });
     }
   }
@@ -353,5 +354,7 @@ async function signInUser(req, res) {
 
 
 
-  module.exports = {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
-    signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateProfile};
+
+
+  module.exports = {get_users, getUserProfile,updateEmail,updatePassword,updateBio, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
+    signUpUser, signInUser, updateUsername};
