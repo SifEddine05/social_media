@@ -313,12 +313,12 @@ async function signInUser(req, res) {
     } catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ message: 'An unexpected error occurred.' });
-      }
+    }
   }
 
-
-  async function updateBio(req, res) {
-    const { username, newBio } = req.body;
+  // Function to update username
+  async function updateProfile(req, res) {
+    const { username, newFullName, newBio } = req.body;
   
     try {
 
@@ -327,11 +327,12 @@ async function signInUser(req, res) {
   
       result = await connection.execute(
         `BEGIN
-            UpdateBio(:p_username, :p_new_bio, :p_error_message);
+            UpdateProfile(:p_username, :p_new_bio, :p_new_full_name, :p_error_message);
          END;`,
         {
           p_username: username,
-          p_new_bio: newBio,
+          p_new_bio: newFullName,
+          p_new_full_name: newBio,
           p_error_message: { type: oracledb.STRING, dir: oracledb.BIND_OUT }
         }
       );
@@ -341,18 +342,16 @@ async function signInUser(req, res) {
       if (errorMessage) {
           res.status(400).json({ message: errorMessage });
       } else {
-          res.status(200).json({ message: 'bio updated successfully.' });
+          res.status(200).json({ message: 'profile updated successfully.' });
       }
   
     } catch (error) {
         console.error('Error occurred:', error);
         res.status(500).json({ message: 'An unexpected error occurred.' });
-      }
+    }
   }
 
 
 
-
-
   module.exports = {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
-    signUpUser, signInUser, updateUsername};
+    signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateProfile};
