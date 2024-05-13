@@ -1,4 +1,4 @@
-const { getConnection, connect, executeQuery, convertToJSON, executeQueryWithbindParams, followUserInDB, unFollowUserInDB, getUserFollowersFromDB, getUserFollowingsFromDB } = require('../db/db'); 
+const { getConnection, connect, executeQuery, convertToJSON, executeQueryWithbindParams } = require('../db/db'); 
 const oracledb = require('oracledb');
 const jwt = require('jsonwebtoken'); 
 
@@ -32,7 +32,17 @@ const followUser = async (req, res, next) => {
     const followingId = req.body.followingId;
 
     try {
-        await followUserInDB(followerId, followingId);
+    
+        const result = await executeQueryWithbindParams(
+            `BEGIN
+                FollowUser(:p_follower_id, :p_following_id);
+            END;`,
+            {
+            p_follower_id: followerId,
+            p_following_id: followingId
+            }
+        );
+
         res.status(200).json({ message: 'User followed successfully' });
     } catch (error) {
         console.error('Error following user:', error);
@@ -46,7 +56,16 @@ const unfollowUser = async (req, res, next) => {
     const followingId = req.body.followingId;
 
     try {
-        await unFollowUserInDB(followerId, followingId);
+    
+        const result = await executeQueryWithbindParams(
+            `BEGIN
+                unfollowUser(:p_follower_id, :p_following_id);
+            END;`,
+            {
+            p_follower_id: followerId,
+            p_following_id: followingId
+            }
+        );
         res.status(200).json({ message: 'User unfollowed successfully' });
     } catch (error) {
         console.error('Error following user:', error);
@@ -56,11 +75,28 @@ const unfollowUser = async (req, res, next) => {
 
 
 const getUserFollowers = async (req, res, next) => {
-    const userId = req.params.userId;
+    const userId = req.user.message;
 
     try {
-        const followers = await getUserFollowersFromDB(userId);
-        res.status(200).json(followers);
+        const connection = await connect();
+        if (!connection) {
+          throw new Error('Connection not established. Call connect() first.');
+        }
+        const result = await connection.execute(
+            `BEGIN
+               :result := GetUserFollowers(:p_user_id);
+             END;`,
+            {
+              p_user_id: userId,
+              result: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+            }
+          );
+          const resultSet = result.outBinds.result;
+          const rows = await resultSet.getRows();
+          await resultSet.close();
+      
+          await connection.close();
+        res.status(200).json(rows);
     } catch (error) {
         console.error('Error retrieving user followers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -69,17 +105,33 @@ const getUserFollowers = async (req, res, next) => {
 
 
 const getUserFollowings = async (req, res, next) => {
-    const userId = req.params.userId;
+    const userId = req.user.message;
 
     try {
-        const followings = await getUserFollowingsFromDB(userId);
-        res.status(200).json(followings);
+        const connection = await connect();
+        if (!connection) {
+          throw new Error('Connection not established. Call connect() first.');
+        }
+        const result = await connection.execute(
+            `BEGIN
+               :result := GetUserFollowings(:p_user_id);
+             END;`,
+            {
+              p_user_id: userId,
+              result: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+            }
+          );
+          const resultSet = result.outBinds.result;
+          const rows = await resultSet.getRows();
+          await resultSet.close();
+      
+          await connection.close();
+        res.status(200).json(rows);
     } catch (error) {
         console.error('Error retrieving user followers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-
 
 
 // Function to sign up a user

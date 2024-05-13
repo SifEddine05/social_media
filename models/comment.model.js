@@ -2,9 +2,18 @@ const { likeCommentInDB, dislikeCommentInDB, executeQueryWithbindParams } = requ
 
 
 const likeComment = async (req, res, next) => {
-    const { userId, commentId } = req.body; 
+    const { commentId } = req.body; 
+    const userId = req.user.message;
     try {
-        await likeCommentInDB(userId, commentId);
+        await executeQueryWithbindParams(
+            `BEGIN
+               LikeComment(:p_user_id, :p_comment_id);
+             END;`,
+            {
+              p_user_id: userId,
+              p_comment_id: commentId
+            }
+          );
         res.status(200).json({ message: 'Comment liked successfully' });
     } catch (error) {
         console.error('Error liking comment:', error);
@@ -13,9 +22,18 @@ const likeComment = async (req, res, next) => {
 };
 
 const dislikeComment = async (req, res, next) => {
-    const { userId, commentId } = req.body; 
+    const { commentId } = req.body; 
+    const userId = req.user.message;
     try {
-        await dislikeCommentInDB(userId, commentId);
+        await executeQueryWithbindParams(
+            `BEGIN
+               DisikeComment(:p_user_id, :p_comment_id);
+             END;`,
+            {
+              p_user_id: userId,
+              p_comment_id: commentId
+            }
+          );
         res.status(200).json({ message: 'Comment disliked successfully' });
     } catch (error) {
         console.error('Error liking comment:', error);
