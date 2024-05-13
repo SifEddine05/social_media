@@ -269,14 +269,14 @@ const likePost=async (req,res)=>{
         res.json({ message: 'Post liked successfully' });
        } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ "error":error.message });
     }
 }
 
 const savePost=async (req,res)=>{
     const savePostQuery=
     `BEGIN
-        SP_SavePost(:user_id, :post_id);
+    SP_SavePost(:user_id, :post_id);
     END;`;
     try {
         const id = req.user.message
@@ -294,9 +294,40 @@ const savePost=async (req,res)=>{
         res.json({ message: 'Post saved successfully' });
        } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ "error":error.message });
     }
 }
+
+
+
+const commentPost=async (req,res)=>{
+    const commentPostQuery=
+    `BEGIN
+    SP_CommentOnPost(:user_id, :post_id,:content);
+        
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id,content } = req.body; 
+
+         if (!post_id || !content) {
+            res.status(400).json({ "error": "post_id and content are required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id,
+            content : content
+        };
+        const result = await executeQueryWithbindParams(commentPostQuery,binds)
+        res.json({ message: 'comment added successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error":error.message });
+    }
+}
+
+
 
 module.exports = {
     get_saved_posts,
@@ -308,5 +339,6 @@ module.exports = {
     deletePostById,
     getmyposts,
     likePost,
-    savePost
+    savePost,
+    commentPost
 }
