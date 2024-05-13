@@ -9,8 +9,6 @@ postRouter.route('/addpost').post(authenticateToken,add_post)
 postRouter.route('/editpost').put(authenticateToken,update_post)
 postRouter.route('/getrecent').get(authenticateToken,executeGetRecentPostsFunc)
 postRouter.route('/getpostcomments').get(authenticateToken,getpostcomments)
-
-
 module.exports = {
     postRouter
 }
