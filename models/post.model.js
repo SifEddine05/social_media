@@ -208,6 +208,8 @@ const getPostsByUserId = async (req, res) => {
 };
 
 
+
+
 const deletePostById=async (req,res)=>{
 const deletePostQuery=
 `BEGIN
@@ -244,6 +246,33 @@ const getmyposts = async (req,res,next)=>
     }
 
 }
+
+
+const likePost=async (req,res)=>{
+    const likePostQuery=
+    `BEGIN
+        SP_LikePost(:user_id, :post_id);
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id } = req.body; 
+
+         if (!post_id ) {
+            res.status(400).json({ "error": "post_id is required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id
+        };
+        const result = await executeQueryWithbindParams(likePostQuery,binds)
+        res.json({ message: 'Post liked successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+    }
+
 module.exports = {
     get_saved_posts,
     add_post,
@@ -252,5 +281,6 @@ module.exports = {
     getpostcomments,
     getPostsByUserId,
     deletePostById,
-    getmyposts
+    getmyposts,
+    likePost
 }
