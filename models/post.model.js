@@ -366,7 +366,30 @@ const searchAccount=async (req,res)=>{
 
 
 
+const UnlikePost=async (req,res)=>{
+    const likePostQuery=
+    `BEGIN
+        SP_DislikePost(:user_id, :post_id);
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id } = req.body; 
 
+         if (!post_id ) {
+            res.status(400).json({ "error": "post_id is required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id
+        };
+        const result = await executeQueryWithbindParams(likePostQuery,binds)
+        res.json({ message: 'Post Unliked successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error":error.message });
+    }
+}
 
 module.exports = {
     get_saved_posts,
@@ -380,5 +403,6 @@ module.exports = {
     likePost,
     savePost,
     commentPost,
-    searchAccount
+    searchAccount,
+    UnlikePost
 }
