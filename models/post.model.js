@@ -189,7 +189,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
 const getPostCommentsWithRepliesQuery = `
 BEGIN
-    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number);
+    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number, :p_user_id);
 END;
     
 `;
@@ -198,6 +198,7 @@ const getpostcomments = async (req, res) => {
     try {
         // Extract the post_id and page_number from the request query
         const { post_id, page_number } = req.query;
+        const id = req.user.message
         const connection = await connect();
 
         if (!post_id || !page_number) {
@@ -209,7 +210,8 @@ const getpostcomments = async (req, res) => {
         const bindParams = {
             cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
             p_post_id: post_id,
-            p_page_number: page_number
+            p_page_number: page_number,
+            p_user_id : id
         };
 
         // Execute the PL/SQL function
