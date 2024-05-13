@@ -35,10 +35,29 @@ FROM posts p
 WHERE p.user_id = :user_id`;
     
     const {user_id} = req.params
+
     try {
+        if(!user_id)
+        {
+            res.status(400).json({"error":"user_id is required"})
+        }
         const binds = {user_id : user_id};
         const result = await executeQueryWithbindParams(getMyPostsQuery, binds);
-        res.json(result); 
+        console.log(result);
+        const jsonResult = result.map(row => {
+            return {
+                post_id: row[0],
+                user_id: row[1],
+                content: row[2],
+                photo: row[3],
+                nb_likes: row[4],
+                nb_comments: row[5],
+                created_at: row[6],
+                is_liked: row[7],
+                is_saved: row[8]
+            };
+        });
+        res.json(jsonResult); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -74,7 +93,20 @@ const get_saved_posts = async(req,res,next)=>{
                 end_row: end_row
             };
             const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
-            res.status(200).json(result)
+            const jsonResult = result.map(row => {
+                return {
+                    post_id: row[0],
+                    user_id: row[1],
+                    content: row[2],
+                    photo: row[3],
+                    nb_likes: row[4],
+                    nb_comments: row[5],
+                    created_at: row[6],
+                    interact_source: row[7],
+                    liked_by_user: row[8]
+                };
+            });
+            res.status(200).json(jsonResult)
         } 
     }
     catch(error){
@@ -297,7 +329,20 @@ WHERE p.user_id = :user_id`;
     try {
         const binds = {user_id : user_id};
         const result = await executeQueryWithbindParams(query, binds);
-        res.json(result); 
+        const jsonResult = result.map(row => {
+            return {
+                post_id: row[0],
+                user_id: row[1],
+                content: row[2],
+                photo: row[3],
+                nb_likes: row[4],
+                nb_comments: row[5],
+                created_at: row[6],
+                is_liked: row[7],
+                is_saved: row[8]
+            };
+        });
+        res.json(jsonResult); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
