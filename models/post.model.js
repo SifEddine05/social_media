@@ -228,6 +228,22 @@ try {
 }
 }
 
+
+const getmyposts = async (req,res,next)=>
+{
+    const query = `SELECT * FROM posts WHERE user_id = :user_id`;
+    const user_id = req.user.message
+    try {
+        const binds = {user_id : 4};
+        const result = await executeQueryWithbindParams(query, binds);
+        console.log(result);
+        res.json(result); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+
+}
 module.exports = {
     get_saved_posts,
     add_post,
@@ -235,5 +251,6 @@ module.exports = {
     executeGetRecentPostsFunc,
     getpostcomments,
     getPostsByUserId,
-    deletePostById
+    deletePostById,
+    getmyposts
 }
