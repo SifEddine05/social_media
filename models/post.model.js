@@ -328,6 +328,45 @@ const commentPost=async (req,res)=>{
 }
 
 
+const searchAccount=async (req,res)=>{
+    const searchAccountQuery=
+    `BEGIN
+    SP_SearchAccount(:search_query, :results);
+  END;`;
+    try {
+        const id = req.user.message
+        const { searchQuery } = req.query; 
+
+         if (!searchQuery) {
+            res.status(400).json({ "error": "searchQuery is required " });
+            return;
+        }
+        let resultsCursor = {
+            dir: oracledb.BIND_OUT,
+            type: oracledb.CURSOR
+        };
+      
+          // Bind parameters
+        const binds = {
+        search_query: searchQuery,
+        results: resultsCursor
+        };
+        const connection = await connect()
+        const result = await connection.execute(searchAccountQuery, binds);      
+        const resultSet = result.outBinds.results;
+        const data = await resultSet.getRows()
+        console.log(data);
+
+        res.json({ data });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ "error":error.message });
+    }
+}
+
+
+
+
 
 module.exports = {
     get_saved_posts,
@@ -340,5 +379,6 @@ module.exports = {
     getmyposts,
     likePost,
     savePost,
-    commentPost
+    commentPost,
+    searchAccount
 }
