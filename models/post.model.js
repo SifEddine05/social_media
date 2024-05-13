@@ -5,37 +5,40 @@ const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQuer
 
 const getPostsByUserId = async (req, res) => {
    
-    const getMyPostsQuery = `
-    SELECT p.*, 
-           CASE WHEN pi.interaction_type = 'like' THEN 1 ELSE 0 END AS isLiked
-      FROM posts p
-           LEFT JOIN post_interactions pi 
-           ON p.post_id = pi.post_id 
-          AND pi.user_id = :user_id
-    WHERE p.user_id = :user_id
-`;
+    const getMyPostsQuery = `SELECT 
+    p.*, 
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'like'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_liked,
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'save'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_saved
+FROM posts p
+WHERE p.user_id = :user_id`;
     
+    const {user_id} = req.params
     try {
-        const id = req.user.message;
-        const user_id = id;
-        console.log(user_id);
-        const connection = await connect();
-        const binds = [user_id, user_id]; // Providing user_id twice for both occurrences in the query
-        const result = await connection.execute(getMyPostsQuery, binds);
-        const posts = result.rows.map(row => {
-            return {
-                post_id: row[0],
-                user_id: row[1],
-                content: row[2],
-                image_url: row[3],
-                isLiked: row[7], 
-                created_at: row[6] 
-            };
-        });
-        
-
-        console.log(posts);
-        res.json(posts);  
+        const binds = {user_id : user_id};
+        const result = await executeQueryWithbindParams(getMyPostsQuery, binds);
+        res.json(result); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -168,7 +171,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
         const bindVars = {
             v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
-            v_user_id: v_user_id,
+            v_user_id: 1,
             v_page_number: v_page_number
         };
 
@@ -177,8 +180,8 @@ const executeGetRecentPostsFunc = async (req, res) => {
         const rows = await cursor.getRows()
         
         await cursor.close();
-
-        res.json(rows);
+        const jsonResult = rows.map(element => JSON.parse(element[0]));
+        res.json(jsonResult);
     } catch (error) {
         res.status(500).json({ "error": error.message });
     }
@@ -189,7 +192,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
 const getPostCommentsWithRepliesQuery = `
 BEGIN
-    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number);
+    :cursor := get_comments_with_replies_func(:p_post_id, :p_page_number, :p_user_id);
 END;
     
 `;
@@ -198,6 +201,7 @@ const getpostcomments = async (req, res) => {
     try {
         // Extract the post_id and page_number from the request query
         const { post_id, page_number } = req.query;
+        const id = req.user.message
         const connection = await connect();
 
         if (!post_id || !page_number) {
@@ -209,7 +213,8 @@ const getpostcomments = async (req, res) => {
         const bindParams = {
             cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
             p_post_id: post_id,
-            p_page_number: page_number
+            p_page_number: page_number,
+            p_user_id : id
         };
 
         // Execute the PL/SQL function
@@ -259,12 +264,39 @@ try {
 
 const getmyposts = async (req,res,next)=>
 {
-    const query = `SELECT * FROM posts WHERE user_id = :user_id`;
+    const query = `SELECT 
+    p.*, 
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'like'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_liked,
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'save'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_saved
+FROM posts p
+WHERE p.user_id = :user_id`;
+
     const user_id = req.user.message
     try {
-        const binds = {user_id : 4};
+        const binds = {user_id : user_id};
         const result = await executeQueryWithbindParams(query, binds);
-        console.log(result);
         res.json(result); 
     } catch (error) {
         console.error(error);
