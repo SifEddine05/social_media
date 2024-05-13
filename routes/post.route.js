@@ -16,8 +16,10 @@ postRouter.route('/editpost').put(authenticateToken,update_post)
 postRouter.route('/getrecent').get(authenticateToken,executeGetRecentPostsFunc)
 
 postRouter.route('/getpostcomments').get(authenticateToken,getpostcomments)
+
 postRouter.route('/getmyposts').get(authenticateToken,getmyposts)
 postRouter.route('/postsbyuser/:user_id').get(authenticateToken, getPostsByUserId);
+
 postRouter.route('/deletepost/:post_id').delete(authenticateToken, deletePostById);
 postRouter.route('/likepost').post(authenticateToken, likePost);
 postRouter.route('/unlikepost').post(authenticateToken, UnlikePost);

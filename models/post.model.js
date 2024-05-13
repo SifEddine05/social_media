@@ -168,7 +168,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
         const bindVars = {
             v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
-            v_user_id: v_user_id,
+            v_user_id: 1,
             v_page_number: v_page_number
         };
 
@@ -177,8 +177,8 @@ const executeGetRecentPostsFunc = async (req, res) => {
         const rows = await cursor.getRows()
         
         await cursor.close();
-
-        res.json(rows);
+        const jsonResult = rows.map(element => JSON.parse(element[0]));
+        res.json(jsonResult);
     } catch (error) {
         res.status(500).json({ "error": error.message });
     }
@@ -261,12 +261,39 @@ try {
 
 const getmyposts = async (req,res,next)=>
 {
-    const query = `SELECT * FROM posts WHERE user_id = :user_id`;
+    const query = `SELECT 
+    p.*, 
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'like'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_liked,
+    (
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM post_interactions pi 
+                WHERE pi.post_id = p.post_id 
+                AND pi.user_id = :user_id 
+                AND pi.interaction_type = 'save'
+            ) THEN 1
+            ELSE 0
+        END
+    ) AS is_saved
+FROM posts p
+WHERE p.user_id = :user_id`;
+
     const user_id = req.user.message
     try {
-        const binds = {user_id : 4};
+        const binds = {user_id : user_id};
         const result = await executeQueryWithbindParams(query, binds);
-        console.log(result);
         res.json(result); 
     } catch (error) {
         console.error(error);
