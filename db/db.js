@@ -2,8 +2,8 @@
 const oracledb = require('oracledb');
 
 const dbConfig = {
-  user: 'c##project',
-  password: 'oracle',
+  user: 'c##db_admin',
+  password: 'wail20032020',
   connectString: 'localhost:1521/ORCL' 
 };
 
@@ -38,17 +38,14 @@ async function executeQuery(sqlQuery) {
   async function executeQueryWithbindParams(sqlQuery, bindParams = {}) {
     try {
         const connection = await connect()
-        console.log(bindParams);
       if (!connection) {
         throw new Error('Connection not established. Call connect() first.');
       }
   
-      const options = {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-        autoCommit: true // You can adjust this option based on your requirements
-      };
+      
   
-      const result = await connection.execute(sqlQuery, bindParams, options);
+      
+      const result = await connection.execute(sqlQuery, bindParams);
       return result.rows;
     } catch (err) {
       console.error('Error executing query:', err);

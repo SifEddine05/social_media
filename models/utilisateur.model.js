@@ -2,7 +2,7 @@ const { getConnection, connect, executeQuery, convertToJSON, executeQueryWithbin
 const oracledb = require('oracledb');
 const jwt = require('jsonwebtoken'); 
 
-const sqlQuery = `SELECT * FROM utilisateurs`;
+const sqlQuery = `SELECT * FROM posts`;
 const get_users = async(req,res,next)=>{
     const result = await executeQuery(sqlQuery);
     console.log("result",result);
@@ -106,7 +106,6 @@ async function signUpUser(req, res) {
   
       // Retrieving the result message from the stored function
       const message = result.outBinds.result;
-  
       // Sending the response
       res.status(200).json({ message });
   
