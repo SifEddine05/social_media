@@ -110,11 +110,7 @@ const update_post = async(req,res,next) =>{
 
 
 
-const getRecentPostsQuery = `
-BEGIN
-    :cursor := get_recent_posts_func(:p_user_id, :p_page_number);
-END;
-`;
+
 
 const executeGetRecentPostsFunc = async (req, res) => {
     try {
@@ -194,10 +190,50 @@ const getpostcomments = async (req, res) => {
 };
 
 
+
+const getPostsByUserId = async (req, res) => {
+    const getMyPostsQuery = `SELECT * FROM posts WHERE user_id = :user_id`;
+
+    try {
+        const connection = await connect();
+        const { user_id } = req.params; 
+        const binds = [user_id];
+        const result = await connection.execute(getMyPostsQuery, binds);
+        console.log(result);
+        res.json(result.rows); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+
+const deletePostById=async (req,res)=>{
+const deletePostQuery=
+`BEGIN
+    delete_post(:user_id,:post_id);
+END;`;
+try {
+    const id = req.user.message
+    const { post_id } = req.params; 
+    const binds = {
+        user_id :id ,
+        post_id : post_id
+    };
+    const result = await executeQueryWithbindParams(deletePostQuery,binds)
+    res.json({ message: 'Post deleted successfully' });
+   } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+}
+}
+
 module.exports = {
     get_saved_posts,
     add_post,
     update_post,
     executeGetRecentPostsFunc,
-    getpostcomments
+    getpostcomments,
+    getPostsByUserId,
+    deletePostById
 }
