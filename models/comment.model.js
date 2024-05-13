@@ -56,4 +56,35 @@ const replyComment = async (req, res, next) => {
 }
 
 
-module.exports = {likeComment, dislikeComment,replyComment}
+
+const updateCommentQuery = `
+BEGIN
+    modify_comment(:user_id,:comment_id,:content);
+END;
+    `;
+const updateComment = async (req, res, next) => {
+    const {  commentId,content } = req.body; 
+    try {
+        const user_id = req.user.message
+
+        if(!content || !commentId )
+            {
+                res.status(400).json({"error" : "You must intoduce content  and commentId"})
+            }
+            else {
+                const bindParams = {
+                    user_id: user_id, 
+                    comment_id:commentId,
+                    content:content
+                };
+                const result = await executeQueryWithbindParams(updateCommentQuery,bindParams);
+                res.status(200).json({ message: 'Comment updated successfully' });
+
+            }  
+    } catch (error) {
+        res.status(500).json({ "error": error.message });
+    }
+}
+
+
+module.exports = {likeComment, dislikeComment,replyComment,updateComment}
