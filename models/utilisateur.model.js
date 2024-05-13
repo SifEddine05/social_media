@@ -356,5 +356,5 @@ async function signInUser(req, res) {
 
 
 
-  module.exports = {get_users, getUserProfile,updateEmail,updatePassword,updateBio, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
+  module.exports = {get_users, updateProfile,getUserProfile,updateEmail,updatePassword, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
     signUpUser, signInUser, updateUsername};
