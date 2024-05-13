@@ -271,7 +271,32 @@ const likePost=async (req,res)=>{
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
+}
+
+const savePost=async (req,res)=>{
+    const savePostQuery=
+    `BEGIN
+        SP_SavePost(:user_id, :post_id);
+    END;`;
+    try {
+        const id = req.user.message
+        const { post_id } = req.body; 
+
+         if (!post_id ) {
+            res.status(400).json({ "error": "post_id is required " });
+            return;
+        }
+        const binds = {
+            user_id :id ,
+            post_id : post_id
+        };
+        const result = await executeQueryWithbindParams(savePostQuery,binds)
+        res.json({ message: 'Post saved successfully' });
+       } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
     }
+}
 
 module.exports = {
     get_saved_posts,
@@ -282,5 +307,6 @@ module.exports = {
     getPostsByUserId,
     deletePostById,
     getmyposts,
-    likePost
+    likePost,
+    savePost
 }
