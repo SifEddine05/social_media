@@ -87,4 +87,33 @@ const updateComment = async (req, res, next) => {
 }
 
 
-module.exports = {likeComment, dislikeComment,replyComment,updateComment}
+const deleteCommentQuery = `
+BEGIN
+    delete_comment(:user_id,:comment_id);
+END;
+    `;
+const deleteComment = async (req, res, next) => {
+    const {  commentId } = req.params; 
+    try {
+        const user_id = req.user.message
+
+        if(!commentId )
+            {
+                res.status(400).json({"error" : "You must intoduce a commentId"})
+            }
+            else {
+                const bindParams = {
+                    user_id: user_id, 
+                    comment_id:commentId,
+                };
+                const result = await executeQueryWithbindParams(deleteCommentQuery,bindParams);
+                res.status(200).json({ message: 'Comment deleted successfully' });
+
+            }  
+    } catch (error) {
+        res.status(500).json({ "error": error.message });
+    }
+}
+
+
+module.exports = {likeComment, dislikeComment,replyComment,updateComment,deleteComment}
