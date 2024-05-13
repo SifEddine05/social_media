@@ -1,5 +1,47 @@
-const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
+
 const oracledb = require('oracledb');
+const jwt = require('jsonwebtoken'); 
+const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
+
+const getPostsByUserId = async (req, res) => {
+   
+    const getMyPostsQuery = `
+    SELECT p.*, 
+           CASE WHEN pi.interaction_type = 'like' THEN 1 ELSE 0 END AS isLiked
+      FROM posts p
+           LEFT JOIN post_interactions pi 
+           ON p.post_id = pi.post_id 
+          AND pi.user_id = :user_id
+    WHERE p.user_id = :user_id
+`;
+    
+    try {
+        const id = req.user.message;
+        const user_id = id;
+        console.log(user_id);
+        const connection = await connect();
+        const binds = [user_id, user_id]; // Providing user_id twice for both occurrences in the query
+        const result = await connection.execute(getMyPostsQuery, binds);
+        const posts = result.rows.map(row => {
+            return {
+                post_id: row[0],
+                user_id: row[1],
+                content: row[2],
+                image_url: row[3],
+                isLiked: row[7], 
+                created_at: row[6] 
+            };
+        });
+        
+
+        console.log(posts);
+        res.json(posts);  
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 
 
 const getSavedPosts =
@@ -190,22 +232,6 @@ const getpostcomments = async (req, res) => {
 };
 
 
-
-const getPostsByUserId = async (req, res) => {
-    const getMyPostsQuery = `SELECT * FROM posts WHERE user_id = :user_id`;
-
-    try {
-        const connection = await connect();
-        const { user_id } = req.params; 
-        const binds = [user_id];
-        const result = await connection.execute(getMyPostsQuery, binds);
-        console.log(result);
-        res.json(result.rows); 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
 
 
 
