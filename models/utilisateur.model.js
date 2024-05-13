@@ -164,7 +164,8 @@ async function signUpUser(req, res) {
       // Releasing the connection
       await connection.close();
     } catch (error) {
-      console.error('Error occurred:', error);
+      console.log(error);
+      console.log('Error occurred:', error);
       res.status(500).json({ message: 'An error occurred during signup.' });
     }
   }
