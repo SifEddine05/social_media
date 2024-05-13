@@ -19,6 +19,7 @@ async function connect() {
   }
 }
 
+
 async function executeQuery(sqlQuery) {
     try {
         const connection = await connect()
@@ -37,24 +38,24 @@ async function executeQuery(sqlQuery) {
   async function executeQueryWithbindParams(sqlQuery, bindParams = {}) {
     try {
         const connection = await connect()
-        console.log(bindParams);
       if (!connection) {
         throw new Error('Connection not established. Call connect() first.');
       }
   
-      const options = {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-        autoCommit: true // You can adjust this option based on your requirements
-      };
+      
   
-      const result = await connection.execute(sqlQuery, bindParams, options);
+      
+      const result = await connection.execute(sqlQuery, bindParams);
       return result.rows;
     } catch (err) {
       console.error('Error executing query:', err);
       throw err;
     }
   }
- 
+
+  
+
+
 module.exports = {
   connect,
   executeQuery,

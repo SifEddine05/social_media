@@ -4,7 +4,9 @@ const app = express();
 const cors = require("cors");
 const { connect } = require('./db/db'); 
 const utilisateurRouter = require("./routes/utilisateur.route");
-const postRouter = require("./routes/post.route");
+
+const CommentRouter = require("./routes/comment.route");
+const { postRouter } = require("./routes/post.route");
 
 
 
@@ -12,7 +14,9 @@ const postRouter = require("./routes/post.route");
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use("/", utilisateurRouter);
-  app.use("/",postRouter);
+
+  app.use("/",postRouter)
+  app.use("/", CommentRouter);
 
   app.use(async (err, req, res, next) => {
     if (err) {
@@ -21,7 +25,6 @@ const postRouter = require("./routes/post.route");
     }
   });
   
- 
 
 
   connect()
