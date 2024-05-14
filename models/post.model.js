@@ -4,75 +4,42 @@ const jwt = require('jsonwebtoken');
 const { getConnection, connect, executeQuery, executeQueryWithBinds, executeQueryWithbindParams } = require('../db/db'); 
 
 const getPostsByUserId = async (req, res) => {
-   
-    const getMyPostsQuery = `SELECT 
-    p.*, 
-    (
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 
-                FROM post_interactions pi 
-                WHERE pi.post_id = p.post_id 
-                AND pi.user_id = :user_id 
-                AND pi.interaction_type = 'like'
-            ) THEN 1
-            ELSE 0
-        END
-    ) AS is_liked,
-    (
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 
-                FROM post_interactions pi 
-                WHERE pi.post_id = p.post_id 
-                AND pi.user_id = :user_id 
-                AND pi.interaction_type = 'save'
-            ) THEN 1
-            ELSE 0
-        END
-    ) AS is_saved
-FROM posts p
-WHERE p.user_id = :user_id`;
     
-    const {user_id} = req.params
-
     try {
+        const {user_id} = req.query
         if(!user_id)
         {
             res.status(400).json({"error":"user_id is required"})
         }
-        const binds = {user_id : user_id};
-        const result = await executeQueryWithbindParams(getMyPostsQuery, binds);
-        console.log(result);
-        const jsonResult = result.map(row => {
-            return {
-                post_id: row[0],
-                user_id: row[1],
-                content: row[2],
-                photo: row[3],
-                nb_likes: row[4],
-                nb_comments: row[5],
-                created_at: row[6],
-                is_liked: row[7],
-                is_saved: row[8]
-            };
-        });
-        res.json(jsonResult); 
+        const { page } = req.query;
+        if(!page){
+            res.status(400).json({"error":"the number of page is required "})
+        }
+        const v_page_number = page;
+        const connection = await connect()
+
+        const query = `BEGIN :v_cursor := get_user_posts_func(:v_user_id, :v_page_number); END;`;
+
+        const bindVars = {
+            v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+            v_user_id: user_id,
+            v_page_number: v_page_number
+        };
+
+        const result = await connection.execute(query, bindVars);
+        const cursor = result.outBinds.v_cursor;
+        const rows = await cursor.getRows()
+        
+        await cursor.close();
+        const jsonResult = rows.map(element => JSON.parse(element[0]));
+        res.json(jsonResult);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ "error": error.message });
     }
 };
 
 
 
-const getSavedPosts =
-`SELECT * FROM (
-    SELECT ap.*, ROW_NUMBER() OVER (ORDER BY ap.post_id) AS row_num
-    FROM saved_posts ap
-    WHERE ap.interaction_source = :user_id
-)
-WHERE row_num BETWEEN :start_row AND :end_row`;
 
 const get_saved_posts = async(req,res,next)=>{
     try{
@@ -87,26 +54,24 @@ const get_saved_posts = async(req,res,next)=>{
             res.status(400).json({"error" : "You must intoduce a start_row and end_row "})
         }
         else {
-            const bindParams = {
-                user_id: user_id, 
+            const connection = await connect()
+
+            const query = `BEGIN :v_cursor := get_saved_posts_func(:v_user_id, :start_row, :end_row); END;`;
+
+            const bindVars = {
+                v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+                v_user_id: user_id,
                 start_row: start_row,
                 end_row: end_row
             };
-            const result = await executeQueryWithbindParams(getSavedPosts,bindParams);
-            const jsonResult = result.map(row => {
-                return {
-                    post_id: row[0],
-                    user_id: row[1],
-                    content: row[2],
-                    photo: row[3],
-                    nb_likes: row[4],
-                    nb_comments: row[5],
-                    created_at: row[6],
-                    interact_source: row[7],
-                    liked_by_user: row[8]
-                };
-            });
-            res.status(200).json(jsonResult)
+
+            const result = await connection.execute(query, bindVars);
+            const cursor = result.outBinds.v_cursor;
+            const rows = await cursor.getRows()
+            
+            await cursor.close();
+            const jsonResult = rows.map(element => JSON.parse(element[0]));
+            res.json(jsonResult);
         } 
     }
     catch(error){
@@ -203,7 +168,7 @@ const executeGetRecentPostsFunc = async (req, res) => {
 
         const bindVars = {
             v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
-            v_user_id: 1,
+            v_user_id: v_user_id,
             v_page_number: v_page_number
         };
 
@@ -296,56 +261,32 @@ try {
 
 const getmyposts = async (req,res,next)=>
 {
-    const query = `SELECT 
-    p.*, 
-    (
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 
-                FROM post_interactions pi 
-                WHERE pi.post_id = p.post_id 
-                AND pi.user_id = :user_id 
-                AND pi.interaction_type = 'like'
-            ) THEN 1
-            ELSE 0
-        END
-    ) AS is_liked,
-    (
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 
-                FROM post_interactions pi 
-                WHERE pi.post_id = p.post_id 
-                AND pi.user_id = :user_id 
-                AND pi.interaction_type = 'save'
-            ) THEN 1
-            ELSE 0
-        END
-    ) AS is_saved
-FROM posts p
-WHERE p.user_id = :user_id`;
-
-    const user_id = req.user.message
     try {
-        const binds = {user_id : user_id};
-        const result = await executeQueryWithbindParams(query, binds);
-        const jsonResult = result.map(row => {
-            return {
-                post_id: row[0],
-                user_id: row[1],
-                content: row[2],
-                photo: row[3],
-                nb_likes: row[4],
-                nb_comments: row[5],
-                created_at: row[6],
-                is_liked: row[7],
-                is_saved: row[8]
-            };
-        });
-        res.json(jsonResult); 
+        const v_user_id = req.user.message; 
+        const { page } = req.query;
+        if(!page){
+            res.status(400).json({"error":"the number of page is required "})
+        }
+        const v_page_number = page;
+        const connection = await connect()
+
+        const query = `BEGIN :v_cursor := get_user_posts_func(:v_user_id, :v_page_number); END;`;
+
+        const bindVars = {
+            v_cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR },
+            v_user_id: v_user_id,
+            v_page_number: v_page_number
+        };
+
+        const result = await connection.execute(query, bindVars);
+        const cursor = result.outBinds.v_cursor;
+        const rows = await cursor.getRows()
+        
+        await cursor.close();
+        const jsonResult = rows.map(element => JSON.parse(element[0]));
+        res.json(jsonResult);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ "error": error.message });
     }
 
 }

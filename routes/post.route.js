@@ -17,7 +17,7 @@ postRouter.route('/getrecent').get(authenticateToken,executeGetRecentPostsFunc)
 postRouter.route('/getpostcomments').get(authenticateToken,getpostcomments) // we must change iit to get the user information
 
 postRouter.route('/getmyposts').get(authenticateToken,getmyposts)
-postRouter.route('/postsbyuser/:user_id').get(authenticateToken, getPostsByUserId);
+postRouter.route('/postsbyuser/').get(authenticateToken, getPostsByUserId);
 
 postRouter.route('/deletepost/:post_id').delete(authenticateToken, deletePostById);
 postRouter.route('/likepost').post(authenticateToken, likePost);
