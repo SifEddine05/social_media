@@ -16,7 +16,19 @@ const getUserProfile = async (req, res, next) => {
         const userProfile = await executeQueryWithbindParams(sqlQuery, { userId: userId });
         if (userProfile && userProfile.length > 0) {
             delete userProfile[0].password;
-            res.status(200).json(userProfile[0]);
+            const formattedProfile = userProfile.map(row => ({
+              user_id: row[0],
+              username: row[1],
+              email: row[2],
+              full_name: row[3],
+              bio: row[4],
+              nb_followers: row[5],
+              nb_followings: row[6],
+              nb_posts: row[7],
+              profile_picture: row[8],
+              created_at: row[9]
+            }));
+            res.status(200).json(formattedProfile[0]);
         } else {
             res.status(404).json({ error: 'User not found' });
         }
@@ -26,9 +38,67 @@ const getUserProfile = async (req, res, next) => {
     }
 };
 
+const getMyProfile = async (req, res) => {
+  const userId = req.user.message;
+  
+  const sqlQuery = `SELECT user_id, username, email, full_name, bio, nb_followers, nb_followings, nb_posts, profile_picture, created_at FROM utilisateurs WHERE user_id = :userId`;
+
+  try {
+      const userProfile = await executeQueryWithbindParams(sqlQuery, { userId: userId });
+      if (userProfile && userProfile.length > 0) {
+          const formattedProfile = userProfile.map(row => ({
+            user_id: row[0],
+            username: row[1],
+            email: row[2],
+            full_name: row[3],
+            bio: row[4],
+            nb_followers: row[5],
+            nb_followings: row[6],
+            nb_posts: row[7],
+            profile_picture: row[8],
+            created_at: row[9]
+          }));
+          res.status(200).json(formattedProfile[0]);
+      } else {
+          res.status(404).json({ error: 'User not found' });
+      }
+  } catch (error) {
+      console.error('Error retrieving user profile:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+ 
+const getAllUsers= async (req, res) => {
+  const sqlQuery = `SELECT user_id, username, email, full_name, bio, nb_followers, nb_followings, nb_posts, profile_picture, created_at FROM utilisateurs`;
+
+  try {
+      const allUsers = await executeQuery(sqlQuery);
+      if (allUsers && allUsers.length > 0) {
+          const formattedUsers = allUsers.map(row => ({
+              user_id: row[0],
+              username: row[1],
+              email: row[2],
+              full_name: row[3],
+              bio: row[4],
+              nb_followers: row[5],
+              nb_followings: row[6],
+              nb_posts: row[7],
+              profile_picture: row[8],
+              created_at: row[9]
+          }));
+          res.status(200).json(formattedUsers);
+      } else {
+          res.status(404).json({ error: 'No users found' });
+      }
+  } catch (error) {
+      console.error('Error retrieving users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 
 const followUser = async (req, res, next) => {
-    const followerId = req.body.followerId;
+    const followerId = req.user.message;
     const followingId = req.body.followingId;
 
     try {
@@ -52,7 +122,7 @@ const followUser = async (req, res, next) => {
 
 
 const unfollowUser = async (req, res, next) => {
-    const followerId = req.body.followerId;
+    const followerId = req.user.message;
     const followingId = req.body.followingId;
 
     try {
@@ -123,16 +193,101 @@ const getUserFollowings = async (req, res, next) => {
           );
           const resultSet = result.outBinds.result;
           const rows = await resultSet.getRows();
+          //delete rows[0].password;
           await resultSet.close();
-      
+          const formattedUsers = rows.map(row => ({
+            user_id: row[0],
+            username: row[1],
+            email: row[2],
+            full_name: row[4],
+            bio: row[5],
+            nb_followers: row[6],
+            nb_followings: row[7],
+            nb_posts: row[8],
+            profile_picture: row[9],
+            created_at: row[10]
+        }));
           await connection.close();
-        res.status(200).json(rows);
+        res.status(200).json(formattedUsers);
     } catch (error) {
         console.error('Error retrieving user followers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
+//added these 2 
+const getUserFollowersById = async (req, res, next) => {
+  const userId = req.params.userId;
+
+  try {
+      const connection = await connect();
+      if (!connection) {
+        throw new Error('Connection not established. Call connect() first.');
+      }
+      const result = await connection.execute(
+          `BEGIN
+             :result := GetUserFollowers(:p_user_id);
+           END;`,
+          {
+            p_user_id: userId,
+            result: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+          }
+        );
+        const resultSet = result.outBinds.result;
+        const rows = await resultSet.getRows();
+        await resultSet.close();
+    
+        await connection.close();
+      res.status(200).json(rows);
+  } catch (error) {
+      console.error('Error retrieving user followers:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+const getUserFollowingsById = async (req, res, next) => {
+  const userId = req.params.userId;
+
+  try {
+      const connection = await connect();
+      if (!connection) {
+        throw new Error('Connection not established. Call connect() first.');
+      }
+      const result = await connection.execute(
+          `BEGIN
+             :result := GetUserFollowings(:p_user_id);
+           END;`,
+          {
+            p_user_id: userId,
+            result: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+          }
+        );
+        const resultSet = result.outBinds.result;
+        const rows = await resultSet.getRows();
+       // delete rows[0].password;
+        await resultSet.close();
+        const formattedUsers = rows.map(row => ({
+          user_id: row[0],
+          username: row[1],
+          email: row[2],
+          full_name: row[4],
+          bio: row[5],
+          nb_followers: row[6],
+          nb_followings: row[7],
+          nb_posts: row[8],
+          profile_picture: row[9],
+          created_at: row[10]
+      }));
+        await connection.close();
+      res.status(200).json(formattedUsers);
+  } catch (error) {
+      console.error('Error retrieving user followers:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+///
 
 // Function to sign up a user
 async function signUpUser(req, res) {
@@ -196,7 +351,7 @@ async function signInUser(req, res) {
       // Checking if sign-in was successful
       if (message != -1 && message != -2) {
         // Generating JWT token
-        const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '1h' });
+        const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '2h' });
   
         // Sending the token as response
         res.status(200).json({ token });
@@ -356,4 +511,4 @@ async function signInUser(req, res) {
 
 
   module.exports = {get_users, getUserProfile,updateEmail,updatePassword,updateBio, followUser, unfollowUser, getUserFollowers, getUserFollowings, getUserFollowings,
-    signUpUser, signInUser, updateUsername};
+    signUpUser, signInUser, updateUsername,getMyProfile,getAllUsers,getUserFollowersById,getUserFollowingsById};
