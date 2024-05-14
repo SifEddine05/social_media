@@ -362,7 +362,7 @@ async function signInUser(req, res) {
       // Checking if sign-in was successful
       if (message != -1 && message != -2) {
         // Generating JWT token
-        const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '2h' });
+        const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '30d' });
   
         // Sending the token as response
         res.status(200).json({ token,message });
