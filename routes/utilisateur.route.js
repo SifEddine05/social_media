@@ -1,6 +1,6 @@
 const express = require("express");
 
-const {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers,getUserFollowingsById,getUserFollowersById, getUserFollowings, signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateBio,getMyProfile,getAllUsers} = require("../models/utilisateur.model");
+const {get_users, getUserProfile, followUser, unfollowUser, getUserFollowers,getUserFollowingsById,getUserFollowersById, getUserFollowings, signUpUser, signInUser, updateUsername, updateEmail, updatePassword, updateBio, updateProfile,getMyProfile,getAllUsers} = require("../models/utilisateur.model");
 const authenticateToken = require("../middleware/token.middleware");
 const utilisateurRouter = express.Router();
 
@@ -19,6 +19,7 @@ utilisateurRouter.route('/signin').post(signInUser)
 utilisateurRouter.route('/update_username').post(updateUsername)
 utilisateurRouter.route('/update_email').post(updateEmail)
 utilisateurRouter.route('/update_password').post(updatePassword)
-utilisateurRouter.route('/update_bio').post(updateBio)
+utilisateurRouter.route('/update_profile').post(updateProfile)
+
 
 module.exports = utilisateurRouter ;

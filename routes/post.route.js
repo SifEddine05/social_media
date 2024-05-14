@@ -5,15 +5,20 @@ const { deletePostById, get_saved_posts, add_post, update_post, executeGetRecent
 const authenticateToken = require("../middleware/token.middleware");
 
 
-postRouter.route('/posts').get(authenticateToken,getPostsByUserId);
 postRouter.route('/deletePost/:post_id').delete(authenticateToken,deletePostById ) ;
+
 postRouter.route('/getsavedposts').get(authenticateToken,get_saved_posts)
+
 postRouter.route('/addpost').post(authenticateToken,add_post)
 postRouter.route('/editpost').put(authenticateToken,update_post)
+
 postRouter.route('/getrecent').get(authenticateToken,executeGetRecentPostsFunc)
-postRouter.route('/getpostcomments').get(authenticateToken,getpostcomments)
+
+postRouter.route('/getpostcomments').get(authenticateToken,getpostcomments) // we must change iit to get the user information
+
 postRouter.route('/getmyposts').get(authenticateToken,getmyposts)
 postRouter.route('/postsbyuser/:user_id').get(authenticateToken, getPostsByUserId);
+
 postRouter.route('/deletepost/:post_id').delete(authenticateToken, deletePostById);
 postRouter.route('/likepost').post(authenticateToken, likePost);
 postRouter.route('/unlikepost').post(authenticateToken, UnlikePost);
