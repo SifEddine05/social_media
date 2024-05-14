@@ -164,9 +164,20 @@ const getUserFollowers = async (req, res, next) => {
           const resultSet = result.outBinds.result;
           const rows = await resultSet.getRows();
           await resultSet.close();
-      
+          const formattedUsers = rows.map(row => ({
+            user_id: row[0],
+            username: row[1],
+            email: row[2],
+            full_name: row[4],
+            bio: row[5],
+            nb_followers: row[6],
+            nb_followings: row[7],
+            nb_posts: row[8],
+            profile_picture: row[9],
+            created_at: row[10]
+        }));
           await connection.close();
-        res.status(200).json(rows);
+        res.status(200).json(formattedUsers);
     } catch (error) {
         console.error('Error retrieving user followers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -347,14 +358,14 @@ async function signInUser(req, res) {
   
       // Retrieving the result message from the stored function
       const message = result.outBinds.result;
-  
+      
       // Checking if sign-in was successful
       if (message != -1 && message != -2) {
         // Generating JWT token
         const token = jwt.sign({ username, message }, 'blancos_zo3ama', { expiresIn: '2h' });
   
         // Sending the token as response
-        res.status(200).json({ token });
+        res.status(200).json({ token,message });
       } else {
         // Sending the error message as response
         res.status(401).json({ message });
